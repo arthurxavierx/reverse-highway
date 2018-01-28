@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0">
+    <meta name="theme-color" content="#FAFAFA">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <title>AudioCube</title>
+    <meta name="description" content="Audio visualization experiment with WebGL">
+
+    <link href="css/main.css" rel="stylesheet" type="text/css" />
+  </head>
+
+  <body>
+    <canvas id="canvas"></canvas>
+
+    <footer>
+      <p><a href="reverse-highway.mp3" download="Reverse Highway - Arthur Xavier.mp3">Reverse Highway</a> by <a href="//arthurxavierx.github.io">Myself</a></p>
+      <p>Source code on <a href="//github.com/arthurxavierx/audiocube">GitHub</a></p>
+    </footer>
+  </body>
+  <script src="lib/gl-matrix-min.js" type="text/javascript"></script>
+  <script src="js/utils.js" type="text/javascript"></script>
+  <script src="js/webgl.js" type="text/javascript"></script>
+  <script src="js/main.js" type="text/javascript"></script>
+
+  <script src="shader/vertex.glsl" id="vshader" type="x-shader/x-vertex">
+    precision mediump float;
+    attribute vec4 a_Position;
+    attribute float a_Force;
+    uniform float u_PointSize;
+    uniform mat4 u_ModelViewMatrix;
+    uniform mat4 u_ProjectionMatrix;
+
+    varying lowp float v_Force;
+
+    void main() {
+      gl_Position = u_ProjectionMatrix * u_ModelViewMatrix * a_Position;
+      gl_PointSize = u_PointSize / gl_Position.w * 10.0;
+      v_Force = a_Force;
+    }
+  </script>
+  <script src="shader/fragment.glsl" id="fshader" type="x-shader/x-fragment">
+    precision mediump float;
+    uniform float u_PointSize;
+    varying lowp float v_Force;
+
+    const float M_PI = 3.141592654;
+    const float hmax = 0.25;
+    const float antialias = 0.75;
+
+    const vec3 MAGENTA = vec3(0.0, 0.588, 1.0);
+    const vec3 CYAN = vec3(1.0, 0.184, 0.573);
+    const vec3 YELLOW = vec3(1.0, 0.831, 0.475);
+    const vec3 WHITE = vec3(1.0, 1.0, 1.0);
+
+    vec4 blend(vec4 base, vec4 blend) {
+      return vec4(base.rgb * blend.rgb * blend.a + base.rgb * (1.0 - blend.a), base.a + blend.a);
+    }
+
+    vec4 circle(vec3 color, float h, float r, float angle, vec2 xy) {
+      float dist = distance(xy, vec2(.5 + cos(angle)*h*.5, .5 + sin(angle)*h*.5));
+      float alpha = 1.0 - smoothstep(r - antialias / u_PointSize, r, dist);
+      return vec4(color, clamp(alpha, 0.0, 1.0));
+    }
+
+    void main() {
+      vec2 uv = gl_PointCoord;
+
+      float r = (1.0 - hmax) * 0.5;
+      float h = v_Force * hmax;
+
+      vec4 colorM = circle(CYAN, h, r, -1.0*M_PI/6.0, uv);
+      vec4 colorC = circle(MAGENTA, h, r, -5.0*M_PI/6.0, uv);
+      vec4 colorY = circle(YELLOW, h, r, -9.0*M_PI/6.0, uv);
+
+      vec4 color;
+      color = blend(blend(colorM, colorC), colorY);
+      color = blend(blend(blend(vec4(WHITE, 0.0), colorM), colorC), colorY);
+      gl_FragColor = vec4(color.rgb, 1.0);
+
+      // float alpha = 1.0 - smoothstep(0.45, 0.5, distance(uv, vec2(0.5)));
+      // gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
+    }
+  </script>
+</html>
