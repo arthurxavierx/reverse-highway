@@ -1,9 +1,16 @@
-/* eslint-disable no-undef */
-'use strict';
+import { createCanvas, createShaderProgram } from './webgl';
+import { duplicate, groupByN, sums, avg, subs, zip } from './utils';
+import { mat4 } from 'gl-matrix/dist/gl-matrix';
+
+import SHADER_VERT from './shader/vert';
+import SHADER_FRAG from './shader/frag';
+// import SHADER_POST from './shaders/post';
+
+import reverse_highway from './audio/reverse-highway.mp3';
 
 //
 const audio = new Audio();
-audio.src = 'reverse-highway.mp3';
+audio.src = reverse_highway;
 audio.loop = true;
 audio.autoplay = true;
 audio.crossOrigin = 'anonymous';
@@ -23,14 +30,17 @@ function main() {
   const { analyser } = createAudioContext(audio, FREQS * RES);
   const { canvas, context: gl } = createCanvas('canvas');
   const shaderProgram =
-    createShaderProgram(gl, [ VERTEX_SHADER, FRAGMENT_SHADER ], {
+    createShaderProgram(gl, [ SHADER_VERT, SHADER_FRAG ], {
       attribs: [ 'a_Position', 'a_Force', 'a_Weight' ],
       uniforms: [ 'u_PointSize', 'u_ModelViewMatrix', 'u_ProjectionMatrix' ],
     });
 
   canvas.addEventListener('mousedown', onMouseDown, false);
+  canvas.addEventListener('touchstart', onMouseDown, false);
   document.addEventListener('mouseup', onMouseUp, false);
+  canvas.addEventListener('touchend', onMouseUp, false);
   document.addEventListener('mousemove', onMouseMove, false);
+  canvas.addEventListener('touchmove', onMouseMove, false);
 
   //
   let Γ = { analyser, canvas, shaderProgram };
@@ -86,16 +96,26 @@ function initGL(gl, Γ) {
 let mouseDown = false, mousePos0 = undefined;
 let camera = { θ: -Math.PI / 1.03, φ: -Math.PI / 2.35, r: ZOOM };
 
-function onMouseDown() {
+const getCoordinatesForEvent = event =>
+  event.changedTouches
+  ? [event.changedTouches[0].clientX, event.changedTouches[0].clientY]
+  : [event.clientX, event.clientY];
+
+function onMouseDown(event) {
+  event.preventDefault();
   mouseDown = true;
-  mousePos0 = [event.clientX, event.clientY];
+  mousePos0 = getCoordinatesForEvent(event);
 }
-function onMouseUp() { mouseDown = false; }
-function onMouseMove() {
+function onMouseUp() {
+  mouseDown = false;
+  audio.play();
+}
+function onMouseMove(event) {
+  event.preventDefault();
   if (!mouseDown)
     return;
 
-  const mousePos = [event.clientX, event.clientY];
+  const mousePos = getCoordinatesForEvent(event);
   const delta = subs(mousePos, mousePos0 || mousePos);
   mousePos0 = mousePos;
 
@@ -142,7 +162,7 @@ function render(gl, dt, { analyser, shaderProgram, buffers: { vertexBuffer } }) 
 
     const weigh = (w) => Math.pow(w + 1, 2);
     const dfreqs_dt = avgFreqs0.map((freqs0, w) =>
-      subs(avgFreqs, freqs0).map(df => df/dt / 300.0 / weigh(w))
+      subs(avgFreqs, freqs0).map(df => df/dt / 400.0 / weigh(w))
     );
 
     const points =

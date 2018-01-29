@@ -1,5 +1,7 @@
 // vim: filetype=glsl
-const VERTEX_SHADER = vertexShader`
+import { vertexShader } from '../webgl';
+
+export default vertexShader`
 
 #ifdef GL_ES
 precision mediump float;

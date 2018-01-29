@@ -1,13 +1,13 @@
 /* eslint-disable no-undef, no-unused-vars */
 'use strict';
 
-function createCanvas(id) {
+export function createCanvas(id) {
   const canvas = document.getElementById(id);
   const context = canvas.getContext('webgl');
   return { canvas, context };
 }
 
-function createShaderProgram(gl, shaders, { attribs, uniforms }) {
+export function createShaderProgram(gl, shaders, { attribs, uniforms }) {
   const program = gl.createProgram();
   shaders.forEach(shader => gl.attachShader(program, shader(gl)));
   gl.linkProgram(program);
@@ -23,10 +23,10 @@ function createShaderProgram(gl, shaders, { attribs, uniforms }) {
   };
 }
 
-const vertexShader = src => gl => loadShader(gl, gl.VERTEX_SHADER, src);
-const fragmentShader = src => gl => loadShader(gl, gl.FRAGMENT_SHADER, src);
+export const vertexShader = src => gl => loadShader(gl, gl.VERTEX_SHADER, src);
+export const fragmentShader = src => gl => loadShader(gl, gl.FRAGMENT_SHADER, src);
 
-function loadShader(gl, type, src) {
+export function loadShader(gl, type, src) {
   const shader = gl.createShader(type);
   gl.shaderSource(shader, src);
   gl.compileShader(shader);

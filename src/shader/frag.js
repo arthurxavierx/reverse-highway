@@ -1,5 +1,7 @@
 // vim: filetype=glsl
-const FRAGMENT_SHADER = fragmentShader`
+import { fragmentShader } from '../webgl';
+
+export default fragmentShader`
 
 #ifdef GL_ES
 precision mediump float;
