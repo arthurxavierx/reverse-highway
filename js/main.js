@@ -9,10 +9,12 @@ audio.autoplay = true;
 audio.crossOrigin = 'anonymous';
 
 //
-const FREQS = 16, RES = 64, FREQ_START = 0, FREQ_END = -RES * 2;
+const FREQS = 32, RES = 64, FREQ_START = 0, FREQ_END = -RES * (Math.log(FREQS) / Math.log(2) - 1);
+const FREQ_MAX = 255.0;
 const FOV = 45 * Math.PI / 180, ZNEAR = 0.1, ZFAR = 100.0;
 
-const CUBE_SIZE = 4.0, POINT_SIZE = 6.0;
+const SIZE = [16.0, 6.0, 16.0], POINT_SIZE = 8.0;
+const ZOOM = 8.0;
 
 
 window.addEventListener('load', main, false);
@@ -20,10 +22,15 @@ window.addEventListener('load', main, false);
 function main() {
   const { analyser } = createAudioContext(audio, FREQS * RES);
   const { canvas, context: gl } = createCanvas('canvas');
-  const shaderProgram = createShaderProgram(gl, $$('#vshader').text, $$('#fshader').text, {
-    attribs: [ 'a_Position', 'a_Force' ],
-    uniforms: [ 'u_PointSize', 'u_ModelViewMatrix', 'u_ProjectionMatrix' ],
-  });
+  const shaderProgram =
+    createShaderProgram(gl, [ VERTEX_SHADER, FRAGMENT_SHADER ], {
+      attribs: [ 'a_Position', 'a_Force', 'a_Weight' ],
+      uniforms: [ 'u_PointSize', 'u_ModelViewMatrix', 'u_ProjectionMatrix' ],
+    });
+
+  canvas.addEventListener('mousedown', onMouseDown, false);
+  document.addEventListener('mouseup', onMouseUp, false);
+  document.addEventListener('mousemove', onMouseMove, false);
 
   //
   let Γ = { analyser, canvas, shaderProgram };
@@ -76,21 +83,44 @@ function initGL(gl, Γ) {
 }
 
 
-let α = Math.PI / 2;
+let mouseDown = false, mousePos0 = undefined;
+let camera = { θ: -Math.PI / 1.03, φ: -Math.PI / 2.35, r: ZOOM };
+
+function onMouseDown() {
+  mouseDown = true;
+  mousePos0 = [event.clientX, event.clientY];
+}
+function onMouseUp() { mouseDown = false; }
+function onMouseMove() {
+  if (!mouseDown)
+    return;
+
+  const mousePos = [event.clientX, event.clientY];
+  const delta = subs(mousePos, mousePos0 || mousePos);
+  mousePos0 = mousePos;
+
+  camera.θ += delta[0] / 500; camera.φ += delta[1] / 500;
+}
+
+
+let projectionMatrix = mat4.create(), modelViewMatrix = mat4.create();
 let avgFreqs0 = undefined;
 
 function render(gl, dt, { analyser, shaderProgram, buffers: { vertexBuffer } }) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
   { // build projection and model-view matrices
-    const projectionMatrix = mat4.create();
-    const aspectRatio = gl.canvas.clientWidth / gl.canvas.clientHeight;
-    mat4.perspective(projectionMatrix, FOV, aspectRatio, ZNEAR, ZFAR);
+    mat4.perspective(projectionMatrix,
+      FOV,
+      gl.canvas.clientWidth / gl.canvas.clientHeight,
+      ZNEAR,
+      ZFAR
+    );
 
-    const modelViewMatrix = mat4.create();
+    let { θ, φ, r } = camera;
     mat4.lookAt(modelViewMatrix,
-      [Math.cos(α) * 10, 3.0, Math.sin(α) * 10],
-      [0, 0, 0],
+      [Math.sin(φ)*Math.cos(θ)*r, Math.cos(φ)*r, Math.sin(φ)*Math.sin(θ)*r],
+      [0, 1, 0],
       [0, 1, 0]
     );
 
@@ -107,21 +137,31 @@ function render(gl, dt, { analyser, shaderProgram, buffers: { vertexBuffer } }) 
     freqs = freqs.slice(FREQ_START, FREQ_END);
 
     const avgFreqs = groupByN(freqs, freqs.length / FREQS).map(avg);
-    avgFreqs0 = avgFreqs0 || avgFreqs;
 
-    const dfreqs_dt = subs(avgFreqs, avgFreqs0).map(df => df/dt / 300.0);
+    avgFreqs0 = avgFreqs0 || duplicate(avgFreqs);
+
+    const weigh = (w) => Math.pow(w + 1, 2);
+    const dfreqs_dt = avgFreqs0.map((freqs0, w) =>
+      subs(avgFreqs, freqs0).map(df => df/dt / 300.0 / weigh(w))
+    );
 
     const points =
-      avgFreqs0.flatMap((_, x) =>
-        avgFreqs0.flatMap((y, z) =>
-          [ (x/FREQS - 0.5) * CUBE_SIZE, y/255.0, (z/FREQS - 0.5) * CUBE_SIZE, y/255.0 ]
-        )
-      );
+      avgFreqs0.slice(0, FREQS/2).flatMap((freqs, z) =>
+        freqs.flatMap((freq, x) => {
+          const f = freq/FREQ_MAX;
+          const w = z/FREQS * 2;
 
-    avgFreqs0 = sums(avgFreqs0, dfreqs_dt);
+          const xx = (x/FREQS - 0.5) * SIZE[0];
+          const yy = f*SIZE[1];
+          const zz = z/FREQS * SIZE[2];
+
+          return [...[xx, yy, zz, f, w], ...(z === 0 ? [] : [xx, yy, -zz, f, w])];
+        }));
+
+    avgFreqs0 = zip(avgFreqs0, dfreqs_dt).map((arrs) => sums.apply(null, arrs));
 
     // draw points
-    const stride = 4*4;
+    const stride = 5*4;
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
 
@@ -131,9 +171,9 @@ function render(gl, dt, { analyser, shaderProgram, buffers: { vertexBuffer } }) 
     gl.vertexAttribPointer(shaderProgram.attribs.a_Force, 1, gl.FLOAT, false, stride, 3*4);
     gl.enableVertexAttribArray(shaderProgram.attribs.a_Force);
 
+    gl.vertexAttribPointer(shaderProgram.attribs.a_Weight, 1, gl.FLOAT, false, stride, 4*4);
+    gl.enableVertexAttribArray(shaderProgram.attribs.a_Weight);
+
     gl.drawArrays(gl.POINTS, 0, points.length / stride * 4);
   }
-
-  // rotate
-  α += 0.25 * dt;
 }

@@ -47,3 +47,5 @@ const zip = (arr1, arr2) => {
     r.push([arr1[i], arr2[i]]);
   return r;
 };
+
+const duplicate = arr => arr.map(_ => arr);

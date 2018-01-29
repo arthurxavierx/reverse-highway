@@ -7,13 +7,9 @@ function createCanvas(id) {
   return { canvas, context };
 }
 
-function createShaderProgram(gl, vertexSrc, fragmentSrc, { attribs, uniforms }) {
-  const vert = loadShader(gl, gl.VERTEX_SHADER, vertexSrc);
-  const frag = loadShader(gl, gl.FRAGMENT_SHADER, fragmentSrc);
-
+function createShaderProgram(gl, shaders, { attribs, uniforms }) {
   const program = gl.createProgram();
-  gl.attachShader(program, vert);
-  gl.attachShader(program, frag);
+  shaders.forEach(shader => gl.attachShader(program, shader(gl)));
   gl.linkProgram(program);
 
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
@@ -26,6 +22,9 @@ function createShaderProgram(gl, vertexSrc, fragmentSrc, { attribs, uniforms }) 
     uniforms: uniforms.reduce((obj, u) => (obj[u] = gl.getUniformLocation(program, u), obj), {}),
   };
 }
+
+const vertexShader = src => gl => loadShader(gl, gl.VERTEX_SHADER, src);
+const fragmentShader = src => gl => loadShader(gl, gl.FRAGMENT_SHADER, src);
 
 function loadShader(gl, type, src) {
   const shader = gl.createShader(type);
