@@ -18,8 +18,8 @@ a:hover {
   text-decoration: none;
 }
 
-small { margin: 0 0.3rem; }
-strong { margin: 0 0.3rem; }
+small { margin: 0 0.2rem; }
+strong { margin: 0 0.2rem; }
 
 canvas {
   cursor: move;
