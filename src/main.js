@@ -77,16 +77,16 @@ function main() {
   window.requestAnimationFrame(loop);
 
   // setup events
-  document.addEventListener('mousedown', onMouseDown, false);
-  document.addEventListener('touchstart', onMouseDown, false);
+  document.body.addEventListener('mousedown', onMouseDown, false);
+  document.body.addEventListener('touchstart', onMouseDown, false);
 
-  document.addEventListener('mouseup', onMouseUp, false);
-  document.addEventListener('touchend', onMouseUp, false);
+  document.body.addEventListener('mouseup', onMouseUp, false);
+  document.body.addEventListener('touchend', onMouseUp, false);
 
-  document.addEventListener('mousemove', onMouseMove, false);
-  document.addEventListener('touchmove', onMouseMove, false);
+  document.body.addEventListener('mousemove', onMouseMove, false);
+  document.body.addEventListener('touchmove', onMouseMove, false);
 
-  document.addEventListener('mousewheel', onMouseWheel, false);
+  document.body.addEventListener('mousewheel', onMouseWheel, false);
 }
 
 function play(audio) {
@@ -148,16 +148,16 @@ function initGL(gl, Γ) {
 }
 
 
-let mouseDown = false, mousePos0 = undefined;
+let mouseDown = false, mousePos0 = undefined, zoom0 = undefined;
 let camera = {
   θ: -Math.PI / 7.0, φ: -Math.PI / 2.0, r: DISTANCE0,
   dθ: 0, dφ: 0, dr: 0,
   d2θ: -0.001, d2φ: 0,
 };
 
-const getCoordinatesForEvent = event =>
-  event.changedTouches
-  ? [event.changedTouches[0].clientX, event.changedTouches[0].clientY]
+const getCoordinatesForEvent = (event, i = 0) =>
+  event.touches
+  ? [event.touches[i].clientX, event.touches[i].clientY]
   : [event.clientX, event.clientY];
 
 function onMouseDown(event) {
@@ -176,10 +176,19 @@ function onMouseMove(event) {
     return;
 
   const mousePos = getCoordinatesForEvent(event);
-  const delta = subs(mousePos, mousePos0 || mousePos);
-  mousePos0 = mousePos;
 
-  camera.d2θ = delta[0] / 200; camera.d2φ = delta[1] / 200;
+  if (event.touches && event.touches.length > 1) {
+    const dist = subs(getCoordinatesForEvent(event, 1), mousePos);
+    const zoom = Math.hypot(...dist);
+    const delta = (zoom0 || zoom) - zoom;
+    zoom0 = zoom;
+    camera.dr += Math.max(-1, Math.min(1, delta));
+  }
+  else {
+    const delta = subs(mousePos, mousePos0 || mousePos);
+    mousePos0 = mousePos;
+    camera.d2θ = delta[0] / 200; camera.d2φ = delta[1] / 200;
+  }
 }
 
 function onMouseWheel(event) {
