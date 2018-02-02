@@ -2,6 +2,8 @@ import { createCanvas, createFramebuffer, createShaderProgram } from './webgl';
 import { duplicate, groupByN, sums, avg, subs, zip } from './utils';
 import { mat4 } from 'gl-matrix/dist/gl-matrix';
 
+import './lib/modernizr';
+
 import SHADER_VERT from './shader/vert';
 import SHADER_FRAG from './shader/frag';
 import SHADER_POST_VERT from './shader/postVert';
@@ -9,12 +11,13 @@ import SHADER_POST_FRAG from './shader/postFrag';
 
 import reverse_highway from './audio/reverse-highway.mp3';
 
+import iconMouseLeft from './img/icon/mouse-left.png';
+import iconMouseWheel from './img/icon/mouse-wheel.png';
+import iconDrag from './img/icon/drag.png';
+import iconPinch from './img/icon/pinch.png';
+import iconPlay from './img/icon/play.png';
+
 //
-const audio = new Audio();
-audio.src = reverse_highway;
-audio.loop = true;
-audio.autoplay = true;
-audio.crossOrigin = 'anonymous';
 
 //
 const FREQS = 32, RES = 64, FREQ_START = 0, FREQ_END = -RES * (Math.log(FREQS) / Math.log(2) - 1);
@@ -29,7 +32,21 @@ const POSTPROCESSING = false;
 
 window.addEventListener('load', main, false);
 
+const $ = document.querySelectorAll.bind(document);
+const $$ = document.querySelector.bind(document);
+
 function main() {
+  const audio = new Audio();
+  audio.src = reverse_highway;
+  audio.loop = true;
+  audio.crossOrigin = 'anonymous';
+  audio.load();
+
+  audio.addEventListener('canplaythrough', () => {
+    $$('#loading').innerHTML = `<button id="play"><img src="${iconPlay}" alt="Play" /></button>`;
+    $$('#play').addEventListener('click', () => play(audio));
+  });
+
   const { canvas, context: gl } = createCanvas('canvas');
   const { analyser } = createAudioContext(audio, FREQS * RES);
   resizeCanvas(gl);
@@ -62,16 +79,21 @@ function main() {
   window.requestAnimationFrame(loop);
 
   // setup events
-  canvas.addEventListener('mousedown', onMouseDown, false);
-  canvas.addEventListener('touchstart', onMouseDown, false);
+  document.addEventListener('mousedown', onMouseDown, false);
+  document.addEventListener('touchstart', onMouseDown, false);
 
   document.addEventListener('mouseup', onMouseUp, false);
-  canvas.addEventListener('touchend', onMouseUp, false);
+  document.addEventListener('touchend', onMouseUp, false);
 
   document.addEventListener('mousemove', onMouseMove, false);
-  canvas.addEventListener('touchmove', onMouseMove, false);
+  document.addEventListener('touchmove', onMouseMove, false);
 
   document.addEventListener('mousewheel', onMouseWheel, false);
+}
+
+function play(audio) {
+  audio.play();
+  $$('#introduction').innerHTML = '';
 }
 
 
@@ -147,7 +169,6 @@ function onMouseDown(event) {
 
 function onMouseUp() {
   mouseDown = false;
-  audio.play();
 }
 
 function onMouseMove(event) {
@@ -164,7 +185,7 @@ function onMouseMove(event) {
 
 function onMouseWheel(event) {
   event.preventDefault();
-  camera.dr += Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
+  camera.dr -= Math.max(-1, Math.min(1, (event.wheelDelta || -event.detail)));
 }
 
 
@@ -191,7 +212,7 @@ function update(dt, {analyser}) {
 
     const weigh = (w) => Math.pow(w + 1, 2);
     const dfreqs_dt = avgFreqs0.map((freqs0, w) =>
-      subs(avgFreqs, freqs0).map(df => df/dt / 300.0 / weigh(w))
+      subs(avgFreqs, freqs0).map(df => df/dt / (300.0 + weigh(w) * 100.0))
     );
 
     avgFreqs0 = zip(avgFreqs0, dfreqs_dt).map((arrs) => sums.apply(null, arrs));
@@ -199,7 +220,7 @@ function update(dt, {analyser}) {
     // shake and move camera according to lower frequencies
     camera.dφ  += (dfreqs_dt[0][2] + dfreqs_dt[0][((FREQS/3)|0) - 1]) / 10.0 * dt;
     camera.dr  += dfreqs_dt[1][5] * 1.0 * dt;
-    camera.d2θ += Math.abs(dfreqs_dt[1][2] / 160.0 * dt) * sig(camera.d2θ);
+    camera.d2θ += Math.abs(dfreqs_dt[1][2] / 300.0 * dt) * (camera.d2θ >= 0 ? 1 : -1);
   }
 }
 

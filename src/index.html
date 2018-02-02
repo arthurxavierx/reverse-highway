@@ -13,16 +13,38 @@
     <title>Reverse Highway - Arthur Xavier</title>
     <meta name="description" content="Audio visualization experiment with WebGL">
 
-    <link href="./main.css" rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
+    <link href="./main.css" rel="stylesheet" type="text/css">
   </head>
 
   <body>
     <canvas id="canvas"></canvas>
 
-    <footer>
-      <p><strong>Song:</strong> <a href="./audio/reverse-highway.mp3" download="Reverse Highway - Arthur Xavier.mp3">Reverse Highway</a> <small>by</small> <a href="//arthurxavierx.github.io">Myself</a></p>
-      <p>Source code on <a href="//github.com/arthurxavierx/reverse-highway">GitHub</a></p>
-    </footer>
+    <div id="overlay">
+      <div id="introduction">
+        <div class="instructions if-touchevents">
+          <img src="./img/icon/drag.png" alt="Drag to move the camera" />
+          &amp;
+          <img src="./img/icon/pinch.png" alt="Pinch to zoom the camera" />
+        </div>
+        <div class="instructions if-no-touchevents">
+          <img src="./img/icon/mouse-left.png" alt="Click and drag to move the camera" />
+          &amp;
+          <img src="./img/icon/mouse-wheel.png" alt="Scroll to zoom the camera" />
+        </div>
+
+        <div id="loading">
+          <div class="circle magenta"></div>
+          <div class="circle cyan"></div>
+          <div class="circle yellow"></div>
+        </div>
+      </div>
+
+      <footer>
+        <p><strong>Song:</strong> <a href="./audio/reverse-highway.mp3" download="Reverse Highway - Arthur Xavier.mp3">Reverse Highway</a> <small>by</small> <a href="//arthurxavierx.github.io">Arthur Xavier</a></p>
+        <p>Source code on <a href="//github.com/arthurxavierx/reverse-highway">GitHub</a></p>
+      </footer>
+    </div>
   </body>
 
   <script src="./main.js" type="text/javascript"></script>
