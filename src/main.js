@@ -15,7 +15,6 @@ import iconMouseLeft from './img/icon/mouse-left.png';
 import iconMouseWheel from './img/icon/mouse-wheel.png';
 import iconDrag from './img/icon/drag.png';
 import iconPinch from './img/icon/pinch.png';
-import iconPlay from './img/icon/play.png';
 
 //
 
@@ -43,8 +42,9 @@ function main() {
   audio.load();
 
   audio.addEventListener('canplaythrough', () => {
-    $$('#loading').innerHTML = `<button id="play"><img src="${iconPlay}" alt="Play" /></button>`;
-    $$('#play').addEventListener('click', () => play(audio));
+    const $loading = $$('#loading');
+    $loading.className += ' loaded';
+    $loading.addEventListener('click', () => play(audio));
   });
 
   const { canvas, context: gl } = createCanvas('canvas');
@@ -94,6 +94,7 @@ function main() {
 function play(audio) {
   audio.play();
   $$('#introduction').innerHTML = '';
+  document.body.className += ' playing';
 }
 
 
