@@ -17,8 +17,6 @@ import iconDrag from './img/icon/drag.png';
 import iconPinch from './img/icon/pinch.png';
 
 //
-
-//
 const FREQS = 32, RES = 64, FREQ_START = 0, FREQ_END = -RES * (Math.log(FREQS) / Math.log(2) - 1);
 const FREQ_MAX = 255.0;
 const FOV = 55 * Math.PI / 180, ZNEAR = 0.1, ZFAR = 100.0;

@@ -137,32 +137,32 @@ button {
 #loading .magenta {
   background-color: #FF2F92;
   border-color: transparent transparent transparent #FF2F92;
-  animation-name: magenta;
+  animation-name: animMagenta;
 }
 
 #loading .cyan {
   background-color: #0096FF;
   border-color: transparent transparent transparent #0096FF;
-  animation-name: cyan;
+  animation-name: animCyan;
 }
 
 #loading .yellow {
   background-color: #FFD479;
   border-color: transparent transparent transparent #FFD479;
-  animation-name: yellow;
+  animation-name: animYellow;
 }
 
-@keyframes magenta {
+@keyframes animMagenta {
   from { transform: translate(-52.5%, -45.67%); }
   to { transform: translate(-47.5%, -54.33%); }
 }
 
-@keyframes cyan {
+@keyframes animCyan {
   from { transform: translate(-47.5%, -45.67%); }
   to { transform: translate(-52.5%, -54.33%); }
 }
 
-@keyframes yellow {
+@keyframes animYellow {
   from { transform: translate(-50%, -52.5%); }
   to { transform: translate(-50%, -47.5%); }
 }
