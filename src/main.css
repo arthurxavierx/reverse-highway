@@ -55,6 +55,12 @@ canvas {
   flex-flow: column;
   align-items: center;
   justify-content: center;
+  opacity: 1;
+  transition: opacity 1s;
+}
+
+.playing #introduction {
+  opacity: 0;
 }
 
 footer {
@@ -128,6 +134,7 @@ button {
   border-width: 0px;
 }
 
+.playing #loading.loaded .triangle { border-width: 0px; }
 #loading.loaded .triangle { border-width: 36px 0 36px 36px; }
 #loading.loaded .circle {
   width: 0px;

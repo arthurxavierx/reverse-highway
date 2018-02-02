@@ -91,8 +91,8 @@ function main() {
 
 function play(audio) {
   audio.play();
-  $$('#introduction').innerHTML = '';
   document.body.className += ' playing';
+  window.setTimeout(() => $$('#introduction').innerHTML = '', 1000);
 }
 
 
