@@ -11,11 +11,6 @@ import SHADER_POST_FRAG from './shader/postFrag';
 
 import reverse_highway from './audio/reverse-highway.mp3';
 
-import iconMouseLeft from './img/icon/mouse-left.png';
-import iconMouseWheel from './img/icon/mouse-wheel.png';
-import iconDrag from './img/icon/drag.png';
-import iconPinch from './img/icon/pinch.png';
-
 //
 const FREQS = 32, RES = 64, FREQ_START = 0, FREQ_END = -RES * (Math.log(FREQS) / Math.log(2) - 1);
 const FREQ_MAX = 255.0;
@@ -252,14 +247,13 @@ function render(gl, dt, {shaders: {dotsShader}, buffers: {vertexBuffer}}) {
       [0, 1, 0],
       [0, 1, 0]
     );
-
-    // setup uniforms
-    gl.useProgram(dotsShader.program);
-    gl.uniform1f(dotsShader.uniforms.u_PointSize, POINT_SIZE);
-    gl.uniformMatrix4fv(dotsShader.uniforms.u_ProjectionMatrix, false, projectionMatrix);
-    gl.uniformMatrix4fv(dotsShader.uniforms.u_ModelViewMatrix, false, modelViewMatrix);
   }
 
+  // setup uniforms
+  gl.useProgram(dotsShader.program);
+  gl.uniform1f(dotsShader.uniforms.u_PointSize, POINT_SIZE);
+  gl.uniformMatrix4fv(dotsShader.uniforms.u_ProjectionMatrix, false, projectionMatrix);
+  gl.uniformMatrix4fv(dotsShader.uniforms.u_ModelViewMatrix, false, modelViewMatrix);
 
   { // setup points
     const points =
